@@ -2,6 +2,7 @@ from django.conf import settings
 from django.contrib.auth import authenticate, get_user_model
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
+from rest_framework.generics import ListAPIView
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -92,3 +93,13 @@ class MeView(APIView):
     @extend_schema(responses={200: UserSerializer})
     def get(self, request):
         return Response(UserSerializer(request.user).data)
+
+
+class UserListView(ListAPIView):
+    """Directory of users for assignee pickers (id + username)."""
+
+    serializer_class = UserSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        return User.objects.order_by("username")
