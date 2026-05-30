@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/Button";
 import { SlideOver } from "@/components/ui/SlideOver";
+import { apiMutate } from "@/lib/client-api";
 import { Project, STATUSES, STATUS_LABELS, Task, User } from "@/lib/types";
 
 import { Column } from "./Column";
@@ -19,8 +21,21 @@ interface Props {
 }
 
 export function KanbanBoard({ project, tasks, users, canManage }: Props) {
+  const router = useRouter();
   const [creating, setCreating] = useState(false);
   const [active, setActive] = useState<Task | null>(null);
+  // Local copy so a drag moves the card instantly; re-syncs when the server refreshes.
+  const [items, setItems] = useState<Task[]>(tasks);
+  useEffect(() => setItems(tasks), [tasks]);
+
+  async function moveTask(taskId: number, status: Task["status"]) {
+    const task = items.find((t) => t.id === taskId);
+    if (!task || task.status === status) return;
+    setItems((prev) => prev.map((t) => (t.id === taskId ? { ...t, status } : t)));
+    const res = await apiMutate(`/tasks/${taskId}/`, "PATCH", { status });
+    if (!res.ok) setItems(tasks); // revert to server truth on failure
+    router.refresh();
+  }
 
   return (
     <section>
@@ -34,11 +49,16 @@ export function KanbanBoard({ project, tasks, users, canManage }: Props) {
 
       <div className="grid gap-4 md:grid-cols-3">
         {STATUSES.map((s) => {
-          const colTasks = tasks.filter((t) => t.status === s);
+          const colTasks = items.filter((t) => t.status === s);
           return (
-            <Column key={s} title={STATUS_LABELS[s]} count={colTasks.length}>
+            <Column
+              key={s}
+              title={STATUS_LABELS[s]}
+              count={colTasks.length}
+              onTaskDrop={canManage ? (id) => moveTask(id, s) : undefined}
+            >
               {colTasks.map((t) => (
-                <TaskCard key={t.id} task={t} onClick={() => setActive(t)} />
+                <TaskCard key={t.id} task={t} draggable={canManage} onClick={() => setActive(t)} />
               ))}
             </Column>
           );

@@ -2,11 +2,29 @@ import { Avatar } from "@/components/ui/Avatar";
 import { PriorityTag } from "@/components/ui/PriorityTag";
 import { Task } from "@/lib/types";
 
-export function TaskCard({ task, onClick }: { task: Task; onClick: () => void }) {
+interface Props {
+  task: Task;
+  onClick: () => void;
+  draggable?: boolean;
+}
+
+export function TaskCard({ task, onClick, draggable }: Props) {
   return (
-    <button
+    <div
+      role="button"
+      tabIndex={0}
+      draggable={draggable}
+      onDragStart={(e) => e.dataTransfer.setData("text/task-id", String(task.id))}
       onClick={onClick}
-      className="block w-full rounded-lg border border-slate-200 bg-white p-3 text-left shadow-sm transition hover:border-slate-300 hover:shadow"
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+      className={`block w-full rounded-lg border border-slate-200 bg-white p-3 text-left shadow-sm transition hover:border-slate-300 hover:shadow ${
+        draggable ? "cursor-grab active:cursor-grabbing" : ""
+      }`}
     >
       <p className="text-sm font-medium text-ink">{task.title}</p>
       <div className="mt-2 flex items-center justify-between">
@@ -16,6 +34,6 @@ export function TaskCard({ task, onClick }: { task: Task; onClick: () => void })
           <Avatar name={task.assigned_to_detail?.username ?? null} />
         </div>
       </div>
-    </button>
+    </div>
   );
 }

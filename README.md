@@ -45,7 +45,7 @@ docker compose run --rm --entrypoint sh frontend -c "npm install && npm test"
 | Backend | Django 5 + DRF, SimpleJWT, drf-spectacular |
 | Database | PostgreSQL 15 |
 | Proxy | nginx — `/api/*` → Django, everything else → Next |
-| Bonus | Dashboard (totals, by-status, overdue, due-this-week) |
+| Bonus (2) | Drag-and-drop Kanban (optimistic, persists via API) + Dashboard (totals, by-status, overdue, due-this-week) |
 
 API docs (Swagger) live at **http://localhost:8080/api/docs**.
 
@@ -91,7 +91,7 @@ They focus on the cookie-auth and permission paths because that’s where bugs w
 ## What I’d improve with more time
 
 - **Silent token refresh on the server side.** Right now a server-component fetch that hits an expired access token redirects to login; I’d add a transparent refresh so the 15-minute expiry is invisible.
-- **Drag-and-drop** between columns with optimistic UI — I shipped status-change-to-move first because it’s reliable and keyboard-accessible; DnD was the bonus I deliberately skipped to keep the MVP polished.
+- **Touch drag-and-drop.** Drag-and-drop between columns is shipped (optimistic, persists via API) using the native HTML5 API — no library, to honour the Tailwind-only/no-component-lib rule. HTML5 DnD is mouse/desktop only, so on touch you move a card via its status selector in the detail panel; I’d add a pointer/touch sensor next.
 - **Pagination on the board.** The board fetches a project’s tasks in one page (fine for the demo); large projects need infinite scroll or page controls.
 - **A real user directory / invitations** instead of exposing all usernames for the assignee picker.
 - **CI** (GitHub Actions running pytest + vitest) and a few end-to-end tests with Playwright.
