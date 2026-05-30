@@ -16,7 +16,10 @@ class DashboardView(APIView):
     @extend_schema(responses={200: dict})
     def get(self, request):
         user = request.user
-        tasks = Task.objects.filter(Q(project__owner=user) | Q(assigned_to=user)).distinct()
+        # Resolve visible task ids first, then aggregate on a join-free queryset
+        # so the OR-filter join can't distort the GROUP BY counts.
+        visible_ids = Task.objects.filter(Q(project__owner=user) | Q(assigned_to=user)).values("id")
+        tasks = Task.objects.filter(id__in=visible_ids)
         today = timezone.localdate()
         by_status = {r["status"]: r["c"] for r in tasks.values("status").annotate(c=Count("id"))}
         data = {
